@@ -1,0 +1,89 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build release archive
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # pin-audit:2026-06-03 de0fac2 | v6.0.2
+
+      - name: Validate release files
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          required=(
+            "Progress.cls"
+            "ProgressManager.cls"
+            "ProgressScope.cls"
+            "ProgressScopeGuard.cls"
+            "IProgressListener.cls"
+            "README.md"
+            "LICENSE-MIT"
+            "LICENSE-APACHE"
+          )
+
+          for path in "${required[@]}"; do
+            test -f "$path"
+          done
+
+      - name: Validate CRLF line endings
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          while IFS= read -r -d '' path; do
+            if perl -0ne 'exit(/(?<!\r)\n/ ? 1 : 0)' "$path"; then
+              continue
+            fi
+
+            echo "::error file=$path::VBA export files must use CRLF line endings"
+            exit 1
+          done < <(find . -type f \( -name "*.cls" -o -name "*.bas" \) -print0)
+
+      - name: Build archive
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          version="${GITHUB_REF_NAME}"
+          archive="vba-progress-${version}.zip"
+          staging="dist/vba-progress-${version}"
+
+          mkdir -p "$staging"
+          cp \
+            Progress.cls \
+            ProgressManager.cls \
+            ProgressScope.cls \
+            ProgressScopeGuard.cls \
+            IProgressListener.cls \
+            README.md \
+            LICENSE-MIT \
+            LICENSE-APACHE \
+            "$staging/"
+          cp -R examples specs "$staging/"
+
+          (cd dist && zip -r "../${archive}" "vba-progress-${version}")
+
+      - name: Create GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          archive="vba-progress-${GITHUB_REF_NAME}.zip"
+          gh release create "$GITHUB_REF_NAME" "$archive" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "$GITHUB_REF_NAME" \
+            --generate-notes
