@@ -20,7 +20,7 @@ Private EndPoint_ As Double
 '
 ' The range is inclusive and must move forward. Reverse ranges would make root
 ' progress non-monotonic and break listener assumptions.
-Public Sub Init(startPoint As Double, endPoint As Double)
+Public Sub Init(ByVal startPoint As Double, ByVal endPoint As Double)
     If startPoint < 0 Or startPoint > 1 Then
         Err.Raise 5, "ProgressScope.Init", "Start point must be between 0 and 1."
     End If
