@@ -36,7 +36,7 @@ Private Sub Class_Initialize()
     IsProgressBarOpen_ = False
 End Sub
 
-Private Sub IProgressListener_OnProgressUpdated(progressValue As Double)
+Private Sub IProgressListener_OnProgressUpdated(ByVal progressValue As Double)
     With ProgressWindow
         If Not IsProgressBarOpen_ Then
             .OpenUI
@@ -45,7 +45,7 @@ Private Sub IProgressListener_OnProgressUpdated(progressValue As Double)
         
         .SetProgressValue progressValue
         
-        If progressValue = 1 Then
+        If progressValue >= 1 Then
             SleepMilliseconds 500
             .CloseUI
             IsProgressBarOpen_ = False
@@ -53,7 +53,7 @@ Private Sub IProgressListener_OnProgressUpdated(progressValue As Double)
     End With
 End Sub
 
-Private Sub SleepMilliseconds(milliseconds As Long)
+Private Sub SleepMilliseconds(ByVal milliseconds As Long)
     If milliseconds <= 0 Then
         Exit Sub
     End If

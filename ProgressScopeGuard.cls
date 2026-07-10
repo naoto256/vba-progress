@@ -22,9 +22,9 @@ Private Initialized_ As Boolean
 '
 ' Initialization stores both the manager and the exact scope object so closing
 ' can verify that this guard still owns the stack top.
-Public Sub Init(manager As ProgressManager, startPoint As Double, endPoint As Double)
+Public Sub Init(ByVal manager As ProgressManager, ByVal startPoint As Double, ByVal endPoint As Double)
     If Initialized_ Then
-        Exit Sub
+        Err.Raise 5, "ProgressScopeGuard.Init", "Guard is already initialized."
     End If
     If manager Is Nothing Then
         Err.Raise 5, "ProgressScopeGuard.Init", "Progress manager is required."

@@ -12,6 +12,6 @@ Option Explicit
 Implements IProgressListener
 
 ' Immediate-window listener useful for examples and specs.
-Private Sub IProgressListener_OnProgressUpdated(progressValue As Double)
+Private Sub IProgressListener_OnProgressUpdated(ByVal progressValue As Double)
     Debug.Print "Progress: " & Format(progressValue * 100, "0.0") & "%"
 End Sub

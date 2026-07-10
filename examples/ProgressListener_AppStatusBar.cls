@@ -21,7 +21,7 @@ Private Sub Class_Initialize()
     IsUpdating_ = False
 End Sub
 
-Private Sub IProgressListener_OnProgressUpdated(progressValue As Double)
+Private Sub IProgressListener_OnProgressUpdated(ByVal progressValue As Double)
     If IsUpdating_ Then
         Exit Sub
     End If
@@ -29,7 +29,7 @@ Private Sub IProgressListener_OnProgressUpdated(progressValue As Double)
     IsUpdating_ = True
     On Error GoTo CleanUp
 
-    If progressValue = 1 Then
+    If progressValue >= 1 Then
         Application.StatusBar = False
     Else
         Application.StatusBar = "Progress: " & Format(progressValue, "0.0%")

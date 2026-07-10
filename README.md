@@ -114,7 +114,12 @@ of the block.
 - `Progress.Finish` reports `1` and resets progress state.
 - `Progress.Reset` resets progress state while keeping listeners.
 
-`Begin`, `Reset`, and `Finish` must be called outside active scopes.
+`Update` and `Scope` require an active operation: call `Begin` first, otherwise
+they raise an error.
+
+`Begin` and `Finish` must be called outside active scopes. `Reset` is the
+recovery entry point: it always succeeds, discarding any scopes still on the
+stack (for example after a non-LIFO guard teardown).
 
 ## Specs
 

@@ -13,5 +13,5 @@ Option Explicit
 '
 ' Implement this in UI, logging, or test adapters. Values are normalized root
 ' progress values from 0 to 1.
-Public Sub OnProgressUpdated(progressValue As Double)
+Public Sub OnProgressUpdated(ByVal progressValue As Double)
 End Sub
