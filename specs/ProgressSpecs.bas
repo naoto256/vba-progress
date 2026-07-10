@@ -12,6 +12,11 @@ Public Sub RunAllProgressSpecs()
     Spec_InvalidProgressValueFails
     Spec_FinishFailsInsideActiveScope
     Spec_ListenerFailureDoesNotStopOtherListeners
+    Spec_UpdateWithoutBeginFails
+    Spec_ScopeWithoutBeginFails
+    Spec_FinishWithoutBeginFails
+    Spec_ResetRecoversFromActiveScope
+    Spec_ProgressIsMonotonic
 
     Debug.Print "All Progress specs passed."
     Exit Sub
@@ -131,27 +136,139 @@ Public Sub Spec_ListenerFailureDoesNotStopOtherListeners()
     ResetProgressForSpec
 End Sub
 
+Public Sub Spec_UpdateWithoutBeginFails()
+    Dim errorNumber As Long
+
+    ResetProgressForSpec
+
+    On Error Resume Next
+    Progress.Update 0.5
+    errorNumber = Err.Number
+    Err.Clear
+    On Error GoTo 0
+    AssertErrorRaised errorNumber, "update without begin"
+
+    ResetProgressForSpec
+End Sub
+
+Public Sub Spec_ScopeWithoutBeginFails()
+    Dim guard As ProgressScopeGuard
+    Dim errorNumber As Long
+
+    ResetProgressForSpec
+
+    On Error Resume Next
+    Set guard = Progress.Scope(0, 0.5)
+    errorNumber = Err.Number
+    Err.Clear
+    On Error GoTo 0
+    AssertErrorRaised errorNumber, "scope without begin"
+
+    Set guard = Nothing
+    ResetProgressForSpec
+End Sub
+
+Public Sub Spec_FinishWithoutBeginFails()
+    Dim errorNumber As Long
+
+    ResetProgressForSpec
+
+    On Error Resume Next
+    Progress.Finish
+    errorNumber = Err.Number
+    Err.Clear
+    On Error GoTo 0
+    AssertErrorRaised errorNumber, "finish without begin"
+
+    ResetProgressForSpec
+End Sub
+
+Public Sub Spec_ResetRecoversFromActiveScope()
+    Dim guard As ProgressScopeGuard
+    Dim capture As ProgressSpecListener
+    Dim errorNumber As Long
+
+    ResetProgressForSpec
+    Set capture = New ProgressSpecListener
+    Progress.AddListener "capture", capture
+
+    Progress.Begin
+    Set guard = Progress.Scope(0, 0.5)
+
+    ' Reset must recover even though a scope guard is still alive.
+    Progress.Reset
+
+    ' The normal lifecycle works again after recovery.
+    capture.Clear
+    Progress.Begin
+    Progress.Finish
+    AssertLongEqual 2, capture.Count, "recovered operation notification count"
+    AssertNear 0, capture.Item(1), "recovered operation begin value"
+    AssertNear 1, capture.Item(2), "recovered operation finish value"
+
+    ' Destroying the now-stale guard must not leak an error: its Class_Terminate
+    ' calls CloseScope, which fails on the discarded scope but swallows it.
+    On Error Resume Next
+    Set guard = Nothing
+    errorNumber = Err.Number
+    Err.Clear
+    On Error GoTo 0
+    If errorNumber <> 0 Then
+        Err.Raise vbObjectError + 1003, "ProgressSpecs.stale guard terminate", _
+            "Stale guard leaked an error."
+    End If
+
+    ResetProgressForSpec
+End Sub
+
+Public Sub Spec_ProgressIsMonotonic()
+    Dim capture As ProgressSpecListener
+    Dim countBeforeSecondScope As Long
+
+    ResetProgressForSpec
+    Set capture = New ProgressSpecListener
+    Progress.AddListener "capture", capture
+
+    Progress.Begin
+    With Progress.Scope(0, 0.6)
+        Progress.Update 1
+        AssertNear 0.6, capture.LastValue, "first scope completes at 0.6"
+    End With
+
+    countBeforeSecondScope = capture.Count
+
+    With Progress.Scope(0.6, 1)
+        ' Opening this scope reports local 0 (global 0.6), which is not greater
+        ' than the last notified value, so it must not emit a new notification.
+        AssertLongEqual countBeforeSecondScope, capture.Count, _
+            "monotonic guard suppresses regressive scope open"
+    End With
+
+    Progress.Finish
+    ResetProgressForSpec
+End Sub
+
 Private Sub ResetProgressForSpec()
     Progress.RemoveListener "capture"
     Progress.RemoveListener "failing"
     Progress.Reset
 End Sub
 
-Private Sub AssertLongEqual(expected As Long, actual As Long, context As String)
+Private Sub AssertLongEqual(ByVal expected As Long, ByVal actual As Long, ByVal context As String)
     If expected <> actual Then
         Err.Raise vbObjectError + 1000, "ProgressSpecs." & context, _
             "Expected " & CStr(expected) & ", got " & CStr(actual) & "."
     End If
 End Sub
 
-Private Sub AssertNear(expected As Double, actual As Double, context As String)
+Private Sub AssertNear(ByVal expected As Double, ByVal actual As Double, ByVal context As String)
     If Abs(expected - actual) > EPSILON Then
         Err.Raise vbObjectError + 1001, "ProgressSpecs." & context, _
             "Expected " & CStr(expected) & ", got " & CStr(actual) & "."
     End If
 End Sub
 
-Private Sub AssertErrorRaised(errorNumber As Long, context As String)
+Private Sub AssertErrorRaised(ByVal errorNumber As Long, ByVal context As String)
     If errorNumber = 0 Then
         Err.Raise vbObjectError + 1002, "ProgressSpecs." & context, "Expected an error."
     End If

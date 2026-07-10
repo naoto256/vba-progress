@@ -21,7 +21,7 @@ Public Property Get Count() As Long
     Count = Count_
 End Property
 
-Private Sub IProgressListener_OnProgressUpdated(progressValue As Double)
+Private Sub IProgressListener_OnProgressUpdated(ByVal progressValue As Double)
     Count_ = Count_ + 1
     Err.Raise vbObjectError + 2000, "ProgressFailingListener", "Intentional listener failure."
 End Sub

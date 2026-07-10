@@ -22,7 +22,7 @@ Public Sub RunProgressExample()
     Progress.Finish
 End Sub
 
-Private Sub SimulateWork(stepCount As Long)
+Private Sub SimulateWork(ByVal stepCount As Long)
     Dim i As Long
 
     For i = 1 To stepCount

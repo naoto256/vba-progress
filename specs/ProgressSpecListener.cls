@@ -25,7 +25,7 @@ Public Property Get Count() As Long
     Count = Values_.Count
 End Property
 
-Public Property Get Item(index As Long) As Double
+Public Property Get Item(ByVal index As Long) As Double
     Item = CDbl(Values_(index))
 End Property
 
@@ -37,6 +37,6 @@ Public Property Get LastValue() As Double
     LastValue = CDbl(Values_(Values_.Count))
 End Property
 
-Private Sub IProgressListener_OnProgressUpdated(progressValue As Double)
+Private Sub IProgressListener_OnProgressUpdated(ByVal progressValue As Double)
     Values_.Add progressValue
 End Sub
